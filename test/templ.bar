@@ -1,0 +1,4 @@
+{{ includeVerbatim "subfolder/bar.foo" }}
+{{ includeYQ ".foo.quux" "foo.yaml" }}
+{{ includeOAPISchema "schema.yaml" }}
+{{ includeOAPIPaths "paths.yaml" }}
