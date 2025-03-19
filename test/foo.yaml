@@ -1,0 +1,10 @@
+foo:
+  bar:
+    baz: 1
+    qux: 2
+  quux:
+    corge: 3
+    grault: 4
+  garply: 5
+  waldo: 6
+  fred: 7

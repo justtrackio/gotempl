@@ -1,0 +1,7 @@
+paths:
+  smth:
+    - $ref: "../test/foo.yaml#/components/schemas/smth"
+    - $ref: "../test/foo.yaml#/components/schemas/smthother"
+
+donotinclude:
+  - $ref: "../test/foo.yaml#/components/schemas/smthother"
