@@ -19,9 +19,10 @@ func init() {
 
 var (
 	funcMap = template.FuncMap{
-		"includeOAPISchema": oapiInclude(".components.schemas"),
-		"includeOAPIPaths":  oapiInclude(".paths"),
-		"includeYQ":         includeWithYQSelector,
+		"includeOAPIParameters": oapiInclude(".components.parameters"),
+		"includeOAPISchemas":    oapiInclude(".components.schemas"),
+		"includeOAPIPaths":      oapiInclude(".paths"),
+		"includeYQ":             includeWithYQSelector,
 		"includeVerbatim": func(filepath string) (string, error) {
 			return includeWithYQSelector("", filepath)
 		},
