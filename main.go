@@ -4,7 +4,10 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"regexp"
+	"sort"
+	"strings"
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
@@ -22,9 +25,9 @@ var (
 		"includeOAPIParameters": oapiInclude(".components.parameters"),
 		"includeOAPISchemas":    oapiInclude(".components.schemas"),
 		"includeOAPIPaths":      oapiInclude(".paths"),
-		"includeYQ":             includeWithYQSelector,
-		"includeVerbatim": func(filepath string) (string, error) {
-			return includeWithYQSelector("", filepath)
+		"includeYQ":             includeWithYQSelectorGlob,
+		"includeVerbatim": func(pattern string) (string, error) {
+			return includeWithYQSelectorGlob("", pattern)
 		},
 	}
 
@@ -79,6 +82,34 @@ func main() {
 	}
 }
 
+// includeWithYQSelectorGlob expands a glob, applies selector to each file, concatenates results.
+func includeWithYQSelectorGlob(selector, pattern string) (string, error) {
+	matches, err := filepath.Glob(pattern)
+	if err != nil {
+		return "", fmt.Errorf("invalid glob %q: %w", pattern, err)
+	}
+	if len(matches) == 0 {
+		return "", fmt.Errorf("no files matched pattern %q", pattern)
+	}
+
+	sort.Strings(matches)
+
+	var parts []string
+	for _, fp := range matches {
+		part, err := includeWithYQSelector(selector, fp)
+		if err != nil {
+			return "", fmt.Errorf("include %q failed: %w", fp, err)
+		}
+
+		part = strings.TrimSpace(part)
+		if part != "" {
+			parts = append(parts, part)
+		}
+	}
+
+	return strings.Join(parts, "\n"), nil
+}
+
 // includeWithYQSelector reads a file, applies the yq path selector on it and returns the filtered
 // contents.
 func includeWithYQSelector(selector, filepath string) (string, error) {
@@ -103,13 +134,13 @@ func includeWithYQSelector(selector, filepath string) (string, error) {
 }
 
 func oapiInclude(selector string) func(string) (string, error) {
-	return func(filepath string) (string, error) {
-		contents, err := includeWithYQSelector(selector, filepath)
+	return func(pattern string) (string, error) {
+		content, err := includeWithYQSelectorGlob(selector, pattern)
 		if err != nil {
 			return "", err
 		}
 
-		return oapiAbsoluteRefs(contents), nil
+		return oapiAbsoluteRefs(content), nil
 	}
 }
 

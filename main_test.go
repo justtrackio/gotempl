@@ -2,6 +2,8 @@ package main
 
 import (
 	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -12,18 +14,8 @@ foo:
   bar: test
   baz: value
 `
-	tmpfile, err := os.CreateTemp("", "test*.yaml")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.Remove(tmpfile.Name())
-
-	if _, err := tmpfile.Write([]byte(content)); err != nil {
-		t.Fatal(err)
-	}
-	if err := tmpfile.Close(); err != nil {
-		t.Fatal(err)
-	}
+	testfile := createTestFile(t, content, "test*.yaml")
+	defer os.Remove(testfile)
 
 	tests := []struct {
 		name     string
@@ -52,7 +44,7 @@ foo:
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := includeWithYQSelector(tt.selector, tmpfile.Name())
+			got, err := includeWithYQSelector(tt.selector, testfile)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("includeWithYQSelector() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -108,4 +100,47 @@ func TestOapiAbsoluteRefs(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestIncludeWithYQSelectorGlob(t *testing.T) {
+	// Create two temporary YAML files
+	content1 := `
+foo:
+  bar: test1
+`
+	content2 := `
+foo:
+  bar: test2
+`
+	file1 := createTestFile(t, content1, "glob1*.yaml")
+	file2 := createTestFile(t, content2, "glob2*.yaml")
+	defer os.Remove(file1)
+	defer os.Remove(file2)
+
+	globePattern := filepath.Join(os.TempDir(), "glob*.yaml")
+
+	got, err := includeWithYQSelectorGlob(".foo.bar", globePattern)
+	if err != nil {
+		t.Fatalf("includeWithYQSelectorGlob() error = %v", err)
+	}
+
+	if !strings.Contains(got, "test1") || !strings.Contains(got, "test2") {
+		t.Errorf("includeWithYQSelectorGlob() = %q, want both test1 and test2", got)
+	}
+}
+
+func createTestFile(t *testing.T, content string, pattern string) string {
+	tmpfile, err := os.CreateTemp("", pattern)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := tmpfile.Write([]byte(content)); err != nil {
+		t.Fatal(err)
+	}
+	if err := tmpfile.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	return tmpfile.Name()
 }
