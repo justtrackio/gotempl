@@ -35,10 +35,14 @@ var (
 	// Matches patterns like "$ref": "somefile.json#/components/schemas/User"
 	// or "$ref": "../folder/file.yaml#/components/schemas/User"
 	// or $ref: "../folder/file.yaml#/components/schemas/User"
-	// The first capture group named ref captures everything until a file path,
-	// the second the file path and the third named fragment captures the component schema fragment.
-	refPathReplaceRegex               = regexp.MustCompile(`(?P<ref>"?\$ref"?\s*:\s*")(.*?)(?P<fragment>#/.*".*)`)
-	refPathReplaceRegexExpandTemplate = "$ref$fragment"
+	// or $ref: '../folder/file.yaml#/components/schemas/User' (single quotes)
+	// Uses alternation (|) to match either double-quoted or single-quoted patterns.
+	// The refDouble/refSingle groups capture the $ref key part with opening quote,
+	// pathDouble/pathSingle capture the file path (discarded), and
+	// fragmentDouble/fragmentSingle capture the component schema fragment.
+	// closeDouble/closeSingle capture the closing quotes to preserve them in output.
+	refPathReplaceRegex               = regexp.MustCompile(`(?P<refDouble>"?\$ref"?\s*:\s*")(?P<pathDouble>[^"]*?)(?P<fragmentDouble>#/[^"]*)(?P<closeDouble>")|(?P<refSingle>"?\$ref"?\s*:\s*')(?P<pathSingle>[^']*?)(?P<fragmentSingle>#/[^']*)(?P<closeSingle>')`)
+	refPathReplaceRegexExpandTemplate = `${refDouble}${fragmentDouble}${closeDouble}${refSingle}${fragmentSingle}${closeSingle}`
 
 	rootCmd = &cobra.Command{
 		Use:   "gotempl",
