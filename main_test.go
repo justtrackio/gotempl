@@ -73,9 +73,19 @@ func TestOapiAbsoluteRefs(t *testing.T) {
 			want:  `"$ref": "#/components/schemas/User"`,
 		},
 		{
-			name:  "ref without quote",
+			name:  "ref without quote on key",
 			input: `- $ref: "../folder/file.yaml#/components/schemas/User"`,
 			want:  `- $ref: "#/components/schemas/User"`,
+		},
+		{
+			name:  "ref with single quotes",
+			input: `- $ref: '../types/parameters.yaml#/components/parameters/IdPathParam'`,
+			want:  `- $ref: '#/components/parameters/IdPathParam'`,
+		},
+		{
+			name:  "ref with single quotes and relative path",
+			input: `$ref: './common.yaml#/components/schemas/NamedOutput'`,
+			want:  `$ref: '#/components/schemas/NamedOutput'`,
 		},
 		{
 			name:  "no ref",
@@ -90,6 +100,13 @@ func TestOapiAbsoluteRefs(t *testing.T) {
 			want: `{"$ref": "#/components/schemas/User",
 					"$ref": "#/components/schemas/Post",
 					"smth": "else"}`,
+		},
+		{
+			name: "mixed quotes refs",
+			input: `- $ref: '../types/parameters.yaml#/components/parameters/XApiView'
+        - $ref: "../types/schemas/common.yaml#/components/schemas/ErrorResponse"`,
+			want: `- $ref: '#/components/parameters/XApiView'
+        - $ref: "#/components/schemas/ErrorResponse"`,
 		},
 	}
 
